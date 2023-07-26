@@ -15,7 +15,7 @@ blp = Blueprint("Items", __name__, description="Operations on items")
 @blp.route("/item/<string:item_id>")
 class Item(MethodView):
     """Класс для работы с отдельным элементом"""
-
+    @blp.response(200, ItemSchema)
     def get(self, item_id):
         """Метод для получения информации об элементе по его ID"""
         try:
@@ -32,6 +32,7 @@ class Item(MethodView):
             abort(404, message="Item not found.")
 
     @blp.arguments(ItemUpdateSchema)
+    @blp.response(200, ItemSchema)
     def put(self, item_data, item_id):
         """Метод для обновления элемента по его ID"""
         try:
@@ -47,12 +48,13 @@ class Item(MethodView):
 @blp.route("/item")
 class ItemList(MethodView):
     """Класс для работы со списком элементов"""
-
+    @blp.response(200, ItemSchema(many=True))
     def get(self):
         """Метод для получения списка всех элементов"""
-        return {"items": list(items.values())}
+        return items.values()
 
     @blp.arguments(ItemSchema)
+    @blp.response(200, ItemSchema)
     def post(self, item_data):
         """Метод для создания нового элемента"""
         for item in items.values():
