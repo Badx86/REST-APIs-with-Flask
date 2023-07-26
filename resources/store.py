@@ -1,21 +1,26 @@
 import uuid
-from flask import request
 from flask.views import MethodView
 from flask_smorest import Blueprint, abort
 from db import stores
+from schemas import StoreSchema
 
+# Создаем новый Blueprint
 blp = Blueprint("stores", __name__, description="Operations on stores")
 
 
+# Создаем endpoint для работы с конкретным магазином
 @blp.route("/store/<string:store_id>")
 class Store(MethodView):
+    """Класс для работы с отдельным магазином"""
     def get(self, store_id):
+        """Метод для получения информации о магазине по его ID"""
         try:
             return stores[store_id]
         except KeyError:
             abort(404, message="Store not found.")
 
     def delete(self, store_id):
+        """Метод для удаления магазина по его ID"""
         try:
             del stores[store_id]
             return {"message": "Store deleted."}
@@ -23,18 +28,17 @@ class Store(MethodView):
             abort(404, message="Store not found.")
 
 
+# Создаем endpoint для получения списка магазинов и добавления нового магазина
 @blp.route("/store")
 class StoreList(MethodView):
+    """Класс для работы со списком магазинов"""
     def get(self):
+        """Метод для получения списка всех магазинов"""
         return {"stores": list(stores.values())}
 
-    def post(self):
-        store_data = request.get_json()
-        if "name" not in store_data:
-            abort(
-                400,
-                message="Bad request. Ensure 'name' is included in the JSON payload.",
-            )
+    @blp.arguments(StoreSchema)
+    def post(self, store_data):
+        """Метод для создания нового магазина"""
         for store in stores.values():
             if store_data["name"] == store["name"]:
                 abort(400, message=f"Store already exists.")

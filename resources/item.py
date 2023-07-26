@@ -1,40 +1,42 @@
 import uuid
-from flask import request
 from flask.views import MethodView
 from flask_smorest import Blueprint, abort
 from db import items
+from schemas import ItemSchema, ItemUpdateSchema
 
+"""Blueprint: способ организации группы связанных между собой маршрутов, функций представления и других кодовых \
+элементов, которые можно использовать несколько раз. Он позволяет разделять приложение на логические блоки, \
+которые можно использовать в разных частях приложения"""
+
+# Создаем новый Blueprint для работы с элементами (items)
 blp = Blueprint("Items", __name__, description="Operations on items")
 
 
 @blp.route("/item/<string:item_id>")
 class Item(MethodView):
+    """Класс для работы с отдельным элементом"""
+
     def get(self, item_id):
+        """Метод для получения информации об элементе по его ID"""
         try:
             return items[item_id]
         except KeyError:
             abort(404, message="Item not found.")
 
     def delete(self, item_id):
+        """Метод для удаления элемента по его ID"""
         try:
             del items[item_id]
             return {"message": "Item deleted."}
         except KeyError:
             abort(404, message="Item not found.")
 
-    def put(self, item_id):
-        item_data = request.get_json()
-        # There`s more validation to do here!
-        # Like making sure price is a number, and also both items are optional
-        # Difficult to do with an if statement...
-        if "price" not in item_data or "name" not in item_data:
-            abort(
-                400,
-                message="Bad request. Ensure 'price' and 'name'' are included in the JSON payload.",
-            )
+    @blp.arguments(ItemUpdateSchema)
+    def put(self, item_data, item_id):
+        """Метод для обновления элемента по его ID"""
         try:
             item = items[item_id]
-            # https://blog.teclado.com/python-dictionary-merge-update-operators/
+            # Объединяем текущие данные элемента с обновленными данными
             item |= item_data
 
             return item
@@ -44,24 +46,15 @@ class Item(MethodView):
 
 @blp.route("/item")
 class ItemList(MethodView):
+    """Класс для работы со списком элементов"""
+
     def get(self):
+        """Метод для получения списка всех элементов"""
         return {"items": list(items.values())}
 
-    def post(self):
-        item_data = request.get_json()
-        # Here not only we need to validate data exists,
-        # But also what type of data. Price should be a float,
-        # for example.
-        if (
-                "price" not in item_data
-                or "store_id" not in item_data
-                or "name" not in item_data
-        ):
-            abort(
-                400,
-                message="Bad request. Ensure 'price', 'store_id' and 'name' are included in the JSON payload.",
-            )
-
+    @blp.arguments(ItemSchema)
+    def post(self, item_data):
+        """Метод для создания нового элемента"""
         for item in items.values():
             if (
                     item_data["name"] == item["name"]
