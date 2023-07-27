@@ -1,7 +1,6 @@
 import uuid
 from flask.views import MethodView
 from flask_smorest import Blueprint, abort
-from db import items
 from schemas import ItemSchema, ItemUpdateSchema
 
 """Blueprint: способ организации группы связанных между собой маршрутов, функций представления и других кодовых \
