@@ -27,7 +27,9 @@ class Item(MethodView):
     def delete(self, item_id):
         """Метод для удаления элемента по его ID"""
         item = ItemModel.query.get_or_404(item_id)
-        return NotImplementedError("Deleting an item is not implemented")
+        db.session.delete(item)
+        db.session.commit()
+        return {"message": "Item deleted"}
 
     @blp.arguments(ItemUpdateSchema)
     @blp.response(200, ItemSchema)
@@ -53,7 +55,7 @@ class ItemList(MethodView):
     @blp.response(200, ItemSchema(many=True))
     def get(self):
         """Метод для получения списка всех элементов"""
-        return items.values()
+        return ItemModel.query.all()
 
     @blp.arguments(ItemSchema)
     @blp.response(200, ItemSchema)

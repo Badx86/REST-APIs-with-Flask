@@ -23,7 +23,9 @@ class Store(MethodView):
     def delete(self, store_id):
         """Метод для удаления магазина по его ID"""
         store = StoreModel.query.get_or_404(store_id)
-        return NotImplementedError("Updating an item is not implemented")
+        db.session.delete(store)
+        db.session.commit()
+        return {"message": "Store deleted"}
 
 
 # Создаем endpoint для получения списка магазинов и добавления нового магазина
@@ -33,7 +35,7 @@ class StoreList(MethodView):
     @blp.response(200, StoreSchema(many=True))
     def get(self):
         """Метод для получения списка всех магазинов"""
-        return stores.values()
+        return StoreModel.query.all()
 
     @blp.arguments(StoreSchema)
     @blp.response(200, StoreSchema)
