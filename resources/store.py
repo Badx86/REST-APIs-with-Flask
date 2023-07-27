@@ -1,6 +1,9 @@
 import uuid
 from flask.views import MethodView
 from flask_smorest import Blueprint, abort
+from sqlalchemy.exc import SQLAlchemyError, IntegrityError
+from db import db
+from models import StoreModel
 from schemas import StoreSchema
 
 # Создаем новый Blueprint
@@ -14,18 +17,13 @@ class Store(MethodView):
     @blp.response(200, StoreSchema)
     def get(self, store_id):
         """Метод для получения информации о магазине по его ID"""
-        try:
-            return stores[store_id]
-        except KeyError:
-            abort(404, message="Store not found.")
+        store = StoreModel.get_or_404(self, store_id)
+        return store
 
     def delete(self, store_id):
         """Метод для удаления магазина по его ID"""
-        try:
-            del stores[store_id]
-            return {"message": "Store deleted."}
-        except KeyError:
-            abort(404, message="Store not found.")
+        store = StoreModel.query.get_or_404(store_id)
+        return NotImplementedError("Updating an item is not implemented")
 
 
 # Создаем endpoint для получения списка магазинов и добавления нового магазина
@@ -40,12 +38,14 @@ class StoreList(MethodView):
     @blp.arguments(StoreSchema)
     @blp.response(200, StoreSchema)
     def post(self, store_data):
-        """Метод для создания нового магазина"""
-        for store in stores.values():
-            if store_data["name"] == store["name"]:
-                abort(400, message=f"Store already exists.")
+        store = StoreModel(**store_data)
 
-        store_id = uuid.uuid4().hex
-        store = {**store_data, "id": store_id}
-        stores[store_id] = store
+        try:
+            db.session.add(store)
+            db.session.commit()
+        except IntegrityError:
+            abort(400, message="A store with that name already exists",)
+        except SQLAlchemyError:
+            abort(500, message="An error occurred while inserting the item")
+
         return store
