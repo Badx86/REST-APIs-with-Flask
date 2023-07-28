@@ -13,15 +13,19 @@ from marshmallow import Schema, fields
 
 class PlainItemSchema(Schema):
     """Схема для создания элемента"""
-    id = fields.Str(dump_only=True)
+    id = fields.Int(dump_only=True)
     name = fields.Str(required=True)
     price = fields.Float(required=True)
 
 
 class PlainStoreSchema(Schema):
     """Схема для магазина"""
-    id = fields.Str(dump_only=True)
+    id = fields.Int(dump_only=True)
     name = fields.Str(required=True)
+
+class PlainTagSchema(Schema):
+    id = fields.Int(dump_only=True)
+    name = fields.Str()
 
 
 class ItemUpdateSchema(Schema):

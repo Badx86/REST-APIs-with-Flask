@@ -17,7 +17,7 @@ class Store(MethodView):
     @blp.response(200, StoreSchema)
     def get(self, store_id):
         """Метод для получения информации о магазине по его ID"""
-        store = StoreModel.get_or_404(self, store_id)
+        store = StoreModel.query.get_or_404(self, store_id)
         return store
 
     def delete(self, store_id):
@@ -25,7 +25,7 @@ class Store(MethodView):
         store = StoreModel.query.get_or_404(store_id)
         db.session.delete(store)
         db.session.commit()
-        return {"message": "Store deleted"}
+        return {"message": "Store deleted"}, 200
 
 
 # Создаем endpoint для получения списка магазинов и добавления нового магазина
