@@ -13,6 +13,7 @@ from marshmallow import Schema, fields
 
 class PlainItemSchema(Schema):
     """Схема для создания элемента"""
+
     id = fields.Int(dump_only=True)
     name = fields.Str(required=True)
     price = fields.Float(required=True)
@@ -20,8 +21,10 @@ class PlainItemSchema(Schema):
 
 class PlainStoreSchema(Schema):
     """Схема для магазина"""
+
     id = fields.Int(dump_only=True)
     name = fields.Str(required=True)
+
 
 class PlainTagSchema(Schema):
     id = fields.Int(dump_only=True)
@@ -30,6 +33,7 @@ class PlainTagSchema(Schema):
 
 class ItemUpdateSchema(Schema):
     """Схема для обновления элемента"""
+
     name = fields.Str()
     price = fields.Float()
     store_id = fields.Int()
@@ -37,12 +41,15 @@ class ItemUpdateSchema(Schema):
 
 class ItemSchema(PlainItemSchema):
     """Схема для полного представления элемента, включая информацию о связанном магазине"""
+
     store_id = fields.Int(required=True, load_only=True)
     store = fields.Nested(PlainStoreSchema(), dump_only=True)
+    tags = fields.List(fields.Nested(PlainTagSchema()), dump_only=True)
 
 
 class StoreSchema(PlainStoreSchema):
     """Схема для полного представления магазина, включая информацию о связанных элементах"""
+
     items = fields.List(fields.Nested(PlainItemSchema()), dump_only=True)
     tags = fields.List(fields.Nested(PlainTagSchema()), dump_only=True)
 
@@ -50,4 +57,10 @@ class StoreSchema(PlainStoreSchema):
 class TagSchema(PlainTagSchema):
     store_id = fields.Int(load_only=True)
     store = fields.Nested(PlainStoreSchema(), dump_only=True)
-    
+    items = fields.List(fields.Nested(PlainItemSchema()), dump_only=True)
+
+
+class TagAndItemSchema(Schema):
+    message = fields.Str()
+    item = fields.Nested(ItemSchema)
+    tag = fields.Nested(TagSchema)
