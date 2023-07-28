@@ -1,5 +1,7 @@
 import os
+import redis
 from db import db
+from rq import Queue
 from flask_smorest import Api
 from dotenv import load_dotenv
 from flask_migrate import Migrate
@@ -23,6 +25,10 @@ def create_app(db_url=None):
     OPENAPI_SWAGGER_UI_URL используются для настройки страницы Swagger UI
     """
 
+    # connection = redis.from_url(
+    #     os.getenv("REDIS_URL")
+    # )
+    # app.queue = Queue("emails", connection=connection)
     app.config["PROPAGATE_EXCEPTIONS"] = True
     app.config["API_TITLE"] = "Stores REST API"
     app.config["API_VERSION"] = "v1"
