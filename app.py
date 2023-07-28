@@ -1,7 +1,7 @@
 import os
-import secrets
 from db import db
 from flask_smorest import Api
+from dotenv import load_dotenv
 from flask_migrate import Migrate
 from blocklist import BLOCKLIST
 from flask import Flask, jsonify
@@ -14,6 +14,7 @@ from resources.user import blp as UserBlueprint
 
 def create_app(db_url=None):
     app = Flask(__name__)
+    load_dotenv()
 
     """
     Конфигурация приложения. PROPAGATE_EXCEPTIONS позволяет исключениям подниматься 
