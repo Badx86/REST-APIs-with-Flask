@@ -1,5 +1,5 @@
 from flask.views import MethodView
-from flask_jwt_extended import create_access_token, get_jwt, jwt_required
+from flask_jwt_extended import create_access_token, get_jwt, jwt_required, create_refresh_token, get_jwt_identity
 from flask_smorest import Blueprint, abort
 from passlib.hash import pbkdf2_sha256
 from blocklist import BLOCKLIST
@@ -7,13 +7,16 @@ from db import db
 from models import UserModel
 from schemas import UserSchema
 
+# Создаем Blueprint для работы с пользователями
 blp = Blueprint("Users", "users", description="Operations on users")
 
 
 @blp.route("/register")
 class UserRegister(MethodView):
+    """Класс для регистрации нового пользователя"""
     @blp.arguments(UserSchema)
     def post(self, user_data):
+        """Метод регистрации нового пользователя"""
         if UserModel.query.filter(UserModel.username == user_data["username"]).first():
             abort(409, message="A user with that username already exists")
 
@@ -29,23 +32,41 @@ class UserRegister(MethodView):
 
 @blp.route("/login")
 class UserLogin(MethodView):
+    """Класс для входа пользователя в систему"""
     @blp.arguments(UserSchema)
     def post(self, user_data):
+        """Метод для аутентификации пользователя и получения токена"""
         user = UserModel.query.filter(
             UserModel.username == user_data["username"]
         ).first()
 
         if user and pbkdf2_sha256.verify(user_data["password"], user.password):
-            access_token = create_access_token(identity=user.id)
-            return {"access_token": access_token}, 200
+            access_token = create_access_token(identity=user.id, fresh=True)
+            refresh_token = create_refresh_token(identity=user.id)
+            return {"access_token": access_token, "refresh_token": refresh_token}, 200
 
         abort(401, message="Invalid credentials")
 
 
+@blp.route("/refresh")
+class TokenRefresh(MethodView):
+    """Класс для обновления токена пользователя"""
+    @jwt_required(refresh=True)
+    def post(self):
+        """Метод для обновления токена доступа"""
+        current_user = get_jwt_identity()
+        new_token = create_access_token(identity=current_user, fresh=False)
+        jti = get_jwt()["jti"]
+        BLOCKLIST.add(jti)
+        return {"access_token": new_token}, 200
+
+
 @blp.route("/logout")
 class UserLogout(MethodView):
+    """Класс для выхода пользователя из системы"""
     @jwt_required()
     def post(self):
+        """Метод для выхода пользователя из системы и добавления токена в блок-лист"""
         jti = get_jwt()["jti"]
         BLOCKLIST.add(jti)
         return {"message": "Successfully logged out"}, 200
@@ -61,10 +82,12 @@ class User(MethodView):
 
     @blp.response(200, UserSchema)
     def get(self, user_id):
+        """Метод для получения информации о пользователе по его ID"""
         user = UserModel.query.get_or_404(user_id)
         return user
 
     def delete(self, user_id):
+        """Метод для удаления пользователя по его ID"""
         user = UserModel.query.get_or_404(user_id)
         db.session.delete(user)
         db.session.commit()

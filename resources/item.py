@@ -66,7 +66,7 @@ class ItemList(MethodView):
         """Метод для получения списка всех элементов"""
         return ItemModel.query.all()
 
-    @jwt_required()
+    @jwt_required(fresh=True)
     @blp.arguments(ItemSchema)
     @blp.response(200, ItemSchema)
     def post(self, item_data):
