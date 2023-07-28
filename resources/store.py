@@ -14,6 +14,7 @@ blp = Blueprint("stores", __name__, description="Operations on stores")
 @blp.route("/store/<string:store_id>")
 class Store(MethodView):
     """Класс для работы с отдельным магазином"""
+
     @blp.response(200, StoreSchema)
     def get(self, store_id):
         """Метод для получения информации о магазине по его ID"""
@@ -32,6 +33,7 @@ class Store(MethodView):
 @blp.route("/store")
 class StoreList(MethodView):
     """Класс для работы со списком магазинов"""
+
     @blp.response(200, StoreSchema(many=True))
     def get(self):
         """Метод для получения списка всех магазинов"""
@@ -46,7 +48,10 @@ class StoreList(MethodView):
             db.session.add(store)
             db.session.commit()
         except IntegrityError:
-            abort(400, message="A store with that name already exists",)
+            abort(
+                400,
+                message="A store with that name already exists",
+            )
         except SQLAlchemyError:
             abort(500, message="An error occurred while inserting the item")
 
