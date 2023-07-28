@@ -1,4 +1,4 @@
-import uuid
+from flask_jwt_extended import jwt_required
 from flask.views import MethodView
 from flask_smorest import Blueprint, abort
 from sqlalchemy.exc import SQLAlchemyError
@@ -18,12 +18,14 @@ blp = Blueprint("Items", __name__, description="Operations on items")
 class Item(MethodView):
     """Класс для работы с отдельным элементом"""
 
+    @jwt_required()
     @blp.response(200, ItemSchema)
     def get(self, item_id):
         """Метод для получения информации об элементе по его ID"""
         item = ItemModel.query.get_or_404(item_id)
         return item
 
+    @jwt_required()
     def delete(self, item_id):
         """Метод для удаления элемента по его ID"""
         item = ItemModel.query.get_or_404(item_id)
@@ -52,11 +54,13 @@ class Item(MethodView):
 class ItemList(MethodView):
     """Класс для работы со списком элементов"""
 
+    @jwt_required()
     @blp.response(200, ItemSchema(many=True))
     def get(self):
         """Метод для получения списка всех элементов"""
         return ItemModel.query.all()
 
+    @jwt_required()
     @blp.arguments(ItemSchema)
     @blp.response(200, ItemSchema)
     def post(self, item_data):
