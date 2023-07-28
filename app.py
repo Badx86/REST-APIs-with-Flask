@@ -2,6 +2,7 @@ import os
 import secrets
 from db import db
 from flask_smorest import Api
+from blocklist import BLOCKLIST
 from flask import Flask, jsonify
 from flask_jwt_extended import JWTManager
 from resources.item import blp as ItemBlueprint
@@ -36,14 +37,48 @@ def create_app(db_url=None):
     db.init_app(app)
 
     api = Api(app)
-    # 2 get your secret key: terminal -> python -> import secrets -> secrets.SystemRandom().getrandbits(128)
-    app.config["JWT_SECRET_KEY"] = "test"
-    jwt = JWTManager(app)
+
+    app.config["JWT_SECRET_KEY"] = "test"  # ключ для подписи JWT
+    jwt = JWTManager(app)  # создание экземпляра менеджера JWT
+
+    """
+    В данном контексте JWT (JSON Web Tokens) используется для реализации аутентификации и авторизации пользователей \
+    в приложении. JWT - это стандарт, который определяет способ безопасной передачи информации между двумя сторонами \
+    в виде JSON-объекта. Эта информация может быть верифицирована и доверена, поскольку она подписана.
+
+    Использование JWT в этом коде включает в себя определение дополнительных претензий (claims), которые используются \
+    для передачи данных о пользователе внутри токена. В этом случае есть претензия "is_admin", которая определяет, \
+    является ли пользователь администратором или нет.
+    
+    JWT также обрабатывает различные ошибки, связанные с токеном, такие как истекший токен, недействительный токен \
+    или отсутствующий токен. Он возвращает соответствующие сообщения об ошибках и коды статуса HTTP
+    """
+
+    @jwt.token_in_blocklist_loader
+    def check_if_token_in_blocklist(jwt_header, jwt_payload):
+        return jwt_payload["jti"] in BLOCKLIST
+
+    @jwt.revoked_token_loader
+    def revoked_token_callback(jwt_header, jwt_payload):
+        return (
+            jsonify(
+                {"description": "The token has been revoked", "error": "token_revoked"}
+            ),
+            401,
+        )
+
+    @jwt.additional_claims_loader
+    def add_claims_to_jwt(identity):
+        """Добавление дополнительных претензий (claims) к JWT"""
+        if identity == 1:  # Если идентификатор пользователя равен 1, считаем его администратором
+            return {"is_admin": True}
+        return {"is_admin": False}  # В противном случае пользователь не является администратором
 
     @jwt.expired_token_loader
     def expired_token_callback(jwt_header, jwt_payload):
+        """Обратный вызов для случая, когда токен истек"""
         return (
-            jsonify({"message": "The token has expired.", "error": "token_expired"}),
+            jsonify({"message": "The token has expired", "error": "token_expired"}),
             401,
         )
 

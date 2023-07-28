@@ -1,4 +1,4 @@
-from flask_jwt_extended import jwt_required
+from flask_jwt_extended import jwt_required, get_jwt
 from flask.views import MethodView
 from flask_smorest import Blueprint, abort
 from sqlalchemy.exc import SQLAlchemyError
@@ -6,9 +6,11 @@ from db import db
 from models import ItemModel
 from schemas import ItemSchema, ItemUpdateSchema
 
-"""Blueprint: способ организации группы связанных между собой маршрутов, функций представления и других кодовых \
+"""
+Blueprint: способ организации группы связанных между собой маршрутов, функций представления и других кодовых \
 элементов, которые можно использовать несколько раз. Он позволяет разделять приложение на логические блоки, \
-которые можно использовать в разных частях приложения"""
+которые можно использовать в разных частях приложения
+"""
 
 # Создаем новый Blueprint для работы с элементами (items)
 blp = Blueprint("Items", __name__, description="Operations on items")
@@ -28,6 +30,10 @@ class Item(MethodView):
     @jwt_required()
     def delete(self, item_id):
         """Метод для удаления элемента по его ID"""
+        jwt = get_jwt()
+        if not jwt.get("is_admin"):
+            abort(401, message="Admin privilege required")
+
         item = ItemModel.query.get_or_404(item_id)
         db.session.delete(item)
         db.session.commit()
@@ -64,6 +70,7 @@ class ItemList(MethodView):
     @blp.arguments(ItemSchema)
     @blp.response(200, ItemSchema)
     def post(self, item_data):
+        """Метод для добавления нового элемента в список"""
         item = ItemModel(**item_data)
 
         try:
