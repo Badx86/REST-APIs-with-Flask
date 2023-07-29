@@ -49,6 +49,7 @@ class UserRegister(MethodView):
 
         return {"message": "User created successfully"}, 201
 
+
 @blp.route("/login")
 class UserLogin(MethodView):
     """Класс для входа пользователя в систему"""
